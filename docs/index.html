@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ReJoEs System – Implementation Status</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 text-gray-900">
+  <div class="container mx-auto p-6 max-w-6xl">
+    <header class="mb-8">
+      <h1 class="text-4xl font-bold text-blue-900 mb-2">ReJoEs System – Implementation Status</h1>
+      <p class="text-gray-600">Backend API and Shopify POS Extension vs Specification</p>
+      <p class="text-sm text-gray-500 mt-2">Last updated: 2026-01-20</p>
+    </header>
+
+    <!-- Tabs -->
+    <section class="mb-12">
+      <h2 class="text-2xl font-semibold text-gray-800 mb-4">Component Status</h2>
+      <div class="bg-white rounded-lg shadow-md">
+        <!-- Tab Headers -->
+        <div class="flex border-b">
+          <button onclick="showTab('server')" id="server-tab" class="px-6 py-3 font-medium text-blue-600 border-b-2 border-blue-600 focus:outline-none">Server</button>
+          <button onclick="showTab('pos')" id="pos-tab" class="px-6 py-3 font-medium text-gray-600 hover:text-gray-800 focus:outline-none">POS Extension</button>
+        </div>
+
+        <!-- Server Tab Content -->
+        <div id="server-content" class="p-6">
+          <h3 class="text-lg font-semibold text-gray-800 mb-4">Server Structure</h3>
+          <pre class="text-sm text-gray-700 font-mono whitespace-pre-wrap mb-6"><code>server/
+├── prisma/
+│   └── schema.prisma
+├── src/
+│   ├── app.ts
+│   ├── config.ts
+│   ├── index.ts
+│   ├── middlewares/
+│   ├── routes/
+│   │   ├── loans.routes.ts
+│   │   ├── members.routes.ts
+│   │   ├── uploads.routes.ts
+│   │   └── webhooks.routes.ts
+│   ├── services/
+│   │   ├── audit.service.ts
+│   │   ├── image.service.ts
+│   │   ├── loan.service.ts
+│   │   ├── member.service.ts
+│   │   └── subscription.service.ts
+│   ├── types/
+│   │   └── index.ts
+│   └── utils/
+├── uploads/
+├── package.json
+└── tsconfig.json</code></pre>
+
+          <h3 class="text-lg font-semibold text-green-700 mb-3">✅ Core Design Principles – Implemented</h3>
+          <ul class="list-disc list-inside space-y-1 text-gray-700 mb-4">
+            <li>Shopify as system of record for customers and billing</li>
+            <li>Custom backend for circulation, timers, swaps, photos</li>
+            <li>No SKUs, no cart line items, no stock separation</li>
+            <li>One national inventory pool with universal access</li>
+            <li>Speed, simplicity, staff ergonomics prioritized</li>
+          </ul>
+
+          <h3 class="text-lg font-semibold text-green-700 mb-3">✅ Subscription Tiers & Rules – Implemented</h3>
+          <ul class="list-disc list-inside space-y-1 text-gray-700 mb-4">
+            <li>Basic: 1 item/month, 0 swaps, max 1 item out</li>
+            <li>Plus: 5 items/month, 2 swaps/month, max 2 items out</li>
+            <li>Premium: 10 items/month, 5 swaps/month, max 4 items out</li>
+            <li>Monthly counters reset on billing cycle</li>
+          </ul>
+
+          <h3 class="text-lg font-semibold text-green-700 mb-3">✅ Data Model – Implemented</h3>
+          <ul class="list-disc list-inside space-y-1 text-gray-700 mb-4">
+            <li>Members table: card token, Shopify customer ID, tier, status, cycle dates, counters</li>
+            <li>Loans table: member ID, store location, checkout time, due date, return time, photo URL</li>
+            <li>Audit events table: records all actions for traceability</li>
+          </ul>
+
+          <h3 class="text-lg font-semibold text-green-700 mb-3">✅ In-Store Flows (Backend APIs) – Implemented</h3>
+          <ul class="list-disc list-inside space-y-1 text-gray-700 mb-4">
+            <li>✅ POS retrieves member status, allowances, items out – Backend ready</li>
+            <li>✅ Backend creates loan record linking photo to member – Backend ready</li>
+            <li>✅ Returns flow – Backend ready</li>
+            <li>✅ Swap flow – Backend ready</li>
+          </ul>
+
+          <h3 class="text-lg font-semibold text-green-700 mb-3">✅ Safeguards – Implemented</h3>
+          <ul class="list-disc list-inside space-y-1 text-gray-700 mb-4">
+            <li>Block checkout when subscriptions inactive</li>
+            <li>Block when allowances exceeded</li>
+            <li>Block when max items out reached</li>
+            <li>All actions logged for auditing</li>
+          </ul>
+
+          <h3 class="text-lg font-semibold text-green-700 mb-3">✅ Subscription Lifecycle Sync – Implemented</h3>
+          <ul class="list-disc list-inside space-y-1 text-gray-700 mb-4">
+            <li>Backend listens to Shopify subscription webhooks</li>
+            <li>Keeps member status, tier, billing cycles in sync</li>
+            <li>Monthly counters reset automatically</li>
+          </ul>
+
+          <h3 class="text-lg font-semibold text-yellow-700 mb-3">⚠️ Returns Flow – Backend Ready, UI Missing</h3>
+          <ul class="list-disc list-inside space-y-1 text-gray-700 mb-4">
+            <li>❌ Staff scans card, visually matches returned item to photo thumbnail, confirms return – No POS extension yet</li>
+            <li>✅ Backend closes loan and frees capacity – POST /api/loans/return</li>
+          </ul>
+
+          <h3 class="text-lg font-semibold text-yellow-700 mb-3">⚠️ Swap Flow – Backend Ready, UI Missing</h3>
+          <ul class="list-disc list-inside space-y-1 text-gray-700">
+            <li>✅ Combined operation: return + capture photo + create loan, consuming swap allowance – POST /api/loans/swap</li>
+            <li>❌ UI for staff to initiate swap – No POS extension yet</li>
+          </ul>
+        </div>
+
+        <!-- POS Tab Content -->
+        <div id="pos-content" class="p-6 hidden">
+          <h3 class="text-lg font-semibold text-gray-800 mb-4">POS Extension Structure</h3>
+          <pre class="text-sm text-gray-700 font-mono whitespace-pre-wrap mb-6"><code>rejoes-pos/extensions/rejoes-pos/
+├── shopify.extension.toml
+├── src/
+│   ├── index.tsx
+│   ├── App.tsx
+│   ├── api/
+│   │   ├── client.ts
+│   │   ├── members.ts
+│   │   ├── loans.ts
+│   │   └── uploads.ts
+│   ├── screens/
+│   │   ├── MemberLookup.tsx
+│   │   ├── Dashboard.tsx
+│   │   ├── CheckoutScreen.tsx
+│   │   ├── ReturnScreen.tsx
+│   │   └── SwapScreen.tsx
+│   ├── components/
+│   │   ├── MemberInfoCard.tsx
+│   │   ├── LoanList.tsx
+│   │   ├── ActionButtons.tsx
+│   │   └── PhotoCapture.tsx
+│   └── utils/
+│       ├── fetchUtils.ts
+│       └── idempotency.ts
+└── package.json</code></pre>
+
+          <h3 class="text-lg font-semibold text-red-700 mb-3">❌ POS Extension Status – Not Implemented</h3>
+          <ul class="list-disc list-inside space-y-1 text-gray-700">
+            <li>POS Extension Scaffold – Not created</li>
+            <li>shopify.extension.toml – Not created</li>
+            <li>React entry (src/index.tsx) and root app (src/App.tsx) – Not created</li>
+            <li>API layer (client.ts, members.ts, loans.ts, uploads.ts) – Not created</li>
+            <li>Screens (MemberLookup, Dashboard, Checkout, Return, Swap) – Not created</li>
+            <li>Reusable components – Not created</li>
+            <li>Utilities (fetchUtils, idempotency) – Not created</li>
+            <li>Extension-level dependencies – Not installed</li>
+            <li>Type checking / build verification – Not run</li>
+          </ul>
+
+          <div class="mt-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+            <p class="text-yellow-800 font-medium">Blocker:</p>
+            <p class="text-gray-700">Without the POS extension, the system cannot be used in-store.</p>
+            <p class="text-gray-700 mt-1">Estimated effort: 8–12 days to scaffold and implement POS extension.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Next Steps -->
+    <section class="mb-12">
+      <h2 class="text-2xl font-semibold text-gray-800 mb-4">Next Steps</h2>
+      <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-6">
+        <p class="text-yellow-800 font-medium mb-2">Immediate Blocker:</p>
+        <p class="text-gray-700">Without the POS extension, the system cannot be used in-store. Backend is production-ready.</p>
+        <p class="text-gray-700 mt-2">Estimated effort: 8–12 days to scaffold and implement POS extension.</p>
+      </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="text-center text-gray-500 text-sm">
+      <p>Generated for ReJoEs Clothing Library – Backend & POS System</p>
+    </footer>
+  </div>
+
+  <script>
+    function showTab(tabName) {
+      // Hide all content
+      document.getElementById('server-content').classList.add('hidden');
+      document.getElementById('pos-content').classList.add('hidden');
+
+      // Remove active styling from tabs
+      document.getElementById('server-tab').classList.remove('text-blue-600', 'border-b-2', 'border-blue-600');
+      document.getElementById('server-tab').classList.add('text-gray-600');
+      document.getElementById('pos-tab').classList.remove('text-blue-600', 'border-b-2', 'border-blue-600');
+      document.getElementById('pos-tab').classList.add('text-gray-600');
+
+      // Show selected content and highlight tab
+      if (tabName === 'server') {
+        document.getElementById('server-content').classList.remove('hidden');
+        document.getElementById('server-tab').classList.remove('text-gray-600');
+        document.getElementById('server-tab').classList.add('text-blue-600', 'border-b-2', 'border-blue-600');
+      } else if (tabName === 'pos') {
+        document.getElementById('pos-content').classList.remove('hidden');
+        document.getElementById('pos-tab').classList.remove('text-gray-600');
+        document.getElementById('pos-tab').classList.add('text-blue-600', 'border-b-2', 'border-blue-600');
+      }
+    }
+  </script>
+</body>
+</html>
